@@ -172,14 +172,67 @@ num_col <- c("NO_TIMES_DELINQUENT_IN_365_DAYS", "NO_OF_DEPENDANTS",
              "PRODUCT_ID", "CHANNEL_ID", "SUB_CHANNEL_ID", "GENDER_AGE_ID",
              "SIZE_ID", "COLOR_ID", "CANCEL_REASON_CODE", "RES_PH_CD")
 master_table[, num_col] <- lapply(master_table[, num_col], factor)
-'''
+
 ########## remove all numerics ##########
+'''
 master_table <- subset(master_table, select = -c(FBCK_FOLLOWING_CNT, FBCK_FOLLOWER_CNT,
                                                  TWT_FOLLOWER_CNT, TWT_FOLLOWING_CNT,
                                                  NO_OF_ITEMS, DISCOUNT_PERCENTAGE,
                                                  QUANTITY_RETURNED, NO_OF_ITEMS_AFTER_RETURN,
                                                  ORDER_RETURNPAID_GROSS_AMT, EXP))
 '''
+summarizeColumns(master_table)  # 165 NAs in MEMBERSHIP_SC
+table(master_table$MEMBERSHIP_SC)
+sum(is.na(master_table$MEMBERSHIP_SC))
+
+na_ind <- sample(which(is.na(master_table$MEMBERSHIP_SC)), size = length(which(is.na(master_table$MEMBERSHIP_SC))))
+
+# BRZ
+brz_size <- floor((length(which(master_table$MEMBERSHIP_SC=="BRZ"))*sum(is.na(master_table$MEMBERSHIP_SC)))/nrow(master_table))
+#brz_ind <- sample(which(is.na(master_table$MEMBERSHIP_SC)), size = smp_size)
+
+# GLD
+gld_size <- floor((length(which(master_table$MEMBERSHIP_SC=="GLD"))*sum(is.na(master_table$MEMBERSHIP_SC)))/nrow(master_table))
+#gld_ind <- sample(which(is.na(master_table$MEMBERSHIP_SC)), size = smp_size)
+
+# PLT
+plt_size <- floor((length(which(master_table$MEMBERSHIP_SC=="PLT"))*sum(is.na(master_table$MEMBERSHIP_SC)))/nrow(master_table))
+#plt_ind <- sample(which(is.na(master_table$MEMBERSHIP_SC)), size = smp_size)
+
+# SLV
+#slv_size <- floor((length(which(master_table$MEMBERSHIP_SC=="SLV"))*sum(is.na(master_table$MEMBERSHIP_SC)))/nrow(master_table))
+#slv_ind <- sample(which(is.na(master_table$MEMBERSHIP_SC)), size = smp_size)
+
+nas <- which(is.na(master_table$MEMBERSHIP_SC))
+j <- 1
+for(i in 1:brz_size){
+  master_table$MEMBERSHIP_SC[nas[j]] <- "BRZ"
+  j <- j+1
+}
+
+for(i in 1:gld_size){
+  master_table$MEMBERSHIP_SC[nas[j]] <- "GLD"
+  j <- j+1
+}
+
+for(i in 1:plt_size){
+  master_table$MEMBERSHIP_SC[nas[j]] <- "PLT"
+  j <- j+1
+}
+
+for(i in 1:slv_size){
+  master_table$MEMBERSHIP_SC[nas[j]] <- "SLV"
+  j <- j+1
+}
+nas <- which(is.na(master_table$MEMBERSHIP_SC))
+for(i in nas){
+  if(i %% 2 == 0){
+    master_table$MEMBERSHIP_SC[i] <- "BRZ"
+  }
+  else{
+    master_table$MEMBERSHIP_SC[i] <- "GLD"
+  }
+}
 ########### split into train and test ##############
 smp_size <- floor(0.7 * nrow(master_table))
 set.seed(100)
@@ -211,13 +264,14 @@ rdesc <- makeResampleDesc("CV", iters=3L)
 r <- resample(learner = bag.lrn , task = traintask, resampling = rdesc, 
               measures = list(tpr,fpr,tnr,fnr,acc) ,show.info = T)
 ##################
+'''
 #impute missing values by mean and mode
 imp <- impute(train, classes = list(factor = imputeMode(), integer = imputeMean()), dummy.classes = c("integer","factor"), dummy.type = "numeric")
 imp1 <- impute(test, classes = list(factor = imputeMode(), integer = imputeMean()), dummy.classes = c("integer","factor"), dummy.type = "numeric")
 
 imp_train <- imp$data
 imp_test <- imp1$data
-
+'''
 
 ########################
 ######### random forest #############
